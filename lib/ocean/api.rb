@@ -505,6 +505,7 @@ class Api
                      plaintext_url: nil, html_url: nil, substitutions: nil)
     Api.request "/v1/mails", :post, 
       x_api_token: Api.service_token, credentials: Api.credentials,
+      raise "foo"
       body: {
         from: from, to: to, subject: subject, 
         plaintext: plaintext, html: html,
