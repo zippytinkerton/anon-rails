@@ -227,13 +227,14 @@ class Api
       request.on_complete do |typhoeus_response|
         response = Response.new typhoeus_response
     begin
+      resp = response || {}
       reslog = {
         'calling_url' => url,
-        'status' => response.status,
-        'headers' => response.headers,
+        'status' => resp.status,
+        'headers' => resp.headers,
         'metadata'=> x_metadata,
         'time' => "#{Time.now - start_time} s",
-        'body' => response.body
+        'body' => resp.body
       }
       Rails.logger.info "<<< OCEAN PARALLEL RESPONSE #{reslog}"
     rescue => error
@@ -300,13 +301,14 @@ class Api
     end
 
     begin
+      resp = response || {}
       reslog = {
         'calling_url' => url,
-        'status' => response.status,
-        'headers' => response.headers,
+        'status' => resp.status,
+        'headers' => resp.headers,
         'metadata'=> x_metadata,
         'time' => "#{Time.now - start_time} s",
-        'body' => response.body
+        'body' => resp.body
       }
       Rails.logger.info "<<< OCEAN NORMAL RESPONSE #{reslog}"
     rescue => error
@@ -436,11 +438,12 @@ class Api
     response = Typhoeus.post url, body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
 
     begin
+      resp = response || {}
       reslog = {
         'calling_url' => url,
-        'status' => response.code,
+        'status' => resp.code,
         'time' => "#{Time.now - start_time} s",
-        'body' => response.body
+        'body' => resp.body
       }
       Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
     rescue => error
