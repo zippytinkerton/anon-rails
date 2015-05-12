@@ -396,7 +396,7 @@ class Api
       nil   
     else
       # Should never end up here.
-      raise "Authentication weirdness"
+      raise "Authentication failiure. Status: #{response.code} body:#{response.body}"
     end
   end
   
