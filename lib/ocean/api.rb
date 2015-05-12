@@ -198,6 +198,21 @@ class Api
 
     url = url.first == "/" ? "#{INTERNAL_OCEAN_API_URL}#{url}" : Api.internalize_uri(url)
 
+    start_time = Time.now
+    begin
+      reqlog = {
+        'url' => url,
+        'method' => http_method,
+        'headers' => headers,
+        'metadata'=> x_metadata,
+        'reauthentication'=> reauthentication,
+        'body' => body
+      }
+      Rails.logger.info ">>> OCEAN REQUEST #{reqlog}"
+    rescue => error
+      Rails.logger.info ">>> OCEAN REQUEST exception #{error}"
+    end
+
     # This is a Proc when run queues the request and schedules retries
     enqueue_request = lambda do
       # First construct a request. It will not be sent yet.
@@ -211,6 +226,20 @@ class Api
       # Define a callback to process the response and do retries
       request.on_complete do |typhoeus_response|
         response = Response.new typhoeus_response
+    begin
+      reslog = {
+        'calling_url' => url,
+        'status' => response.status,
+        'headers' => response.headers,
+        'metadata'=> x_metadata,
+        'time' => "#{Time.now - start_time} s",
+        'body' => response.body
+      }
+      Rails.logger.info "<<< OCEAN PARALLEL RESPONSE #{reslog}"
+    rescue => error
+      Rails.logger.info "<<< OCEAN PARALLEL RESPONSE exception #{error}"
+    end
+
         case response.status
         when 100..199
           enqueue_request.call  # Ignore and retry
@@ -268,6 +297,20 @@ class Api
       # Raise any exceptions
       raise Api::TimeoutError, "Api.request timed out" if response.timed_out?
       raise Api::NoResponseError, "Api.request could not obtain a response" if response.status == 0
+    end
+
+    begin
+      reslog = {
+        'calling_url' => url,
+        'status' => response.status,
+        'headers' => response.headers,
+        'metadata'=> x_metadata,
+        'time' => "#{Time.now - start_time} s",
+        'body' => response.body
+      }
+      Rails.logger.info "<<< OCEAN NORMAL RESPONSE #{reslog}"
+    rescue => error
+      Rails.logger.info "<<< OCEAN NORMAL RESPONSE exception #{error}"
     end
     response
   end
@@ -378,8 +421,32 @@ class Api
   def self.authenticate(username=API_USER, password=API_PASSWORD)
     # response = request "/v1/authentications", :post,
     #                    headers: {'X-API-Authenticate' => credentials(username, password)}
-    response = Typhoeus.post "#{INTERNAL_OCEAN_API_URL}/v1/authentications", 
-                 body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
+    url = "#{INTERNAL_OCEAN_API_URL}/v1/authentications"
+
+    start_time = Time.now
+    begin
+      reqlog = {
+        'url' => url
+      }
+      Rails.logger.info ">>> OCEAN AUTH REQUEST #{reqlog}"
+    rescue => error
+      Rails.logger.info ">>> OCEAN AUTH REQUEST exception #{error}"
+    end#
+
+    response = Typhoeus.post url, body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
+
+    begin
+      reslog = {
+        'calling_url' => url,
+        'status' => response.code,
+        'time' => "#{Time.now - start_time} s",
+        'body' => response.body
+      }
+      Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
+    rescue => error
+      Rails.logger.info "<<< OCEAN AUTH RESPONSE exception #{error}"
+    end
+
     case response.code
     when 201
       token = JSON.parse(response.body)['authentication']['token']

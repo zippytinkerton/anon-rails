@@ -15,3 +15,6 @@ spec/dummy/.sass-cache
 # Ignore yml config files in dummy app
 spec/dummy/config/config.yml
 spec/dummy/config/aws.yml
+
+# ctags
+.tags
