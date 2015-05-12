@@ -1,0 +1,66 @@
+##########################################################################################
+# In order for the application to work, a file named config/config.yml must exist.
+# You can use this file as a template: simply copy it, rename it and tailor its
+# contents. All data in this file will be used to define constants in your application
+# namespace. Please note that both config.yml and config.yml.example must exist - don't
+# delete this example file, as its values will be used by TeamCity for tests.
+# 
+# Any constants declared here can be overridden by corresponding environment variables
+# starting with OVERRIDE_. Thus, BASE_DOMAIN can be overridden by the environment
+# variable OVERRIDE_BASE_DOMAIN, and so forth. The API_PASSWORD receives special
+# treatment: you can pass both the master and the staging password separated by a comma,
+# and Ocean will choose the appropriate one to use depending on the Chef environment.
+#
+# NB: the Chef recipes used to deploy this to the production environment will
+# replace the contents of config/config.yml with an auto-generated file.
+##########################################################################################
+
+
+# This is the application's name
+APP_NAME:     <%= name %>
+
+# Authentication data to use when the app authenticates with the Auth service.
+# You should substitute your own password. Passwords should not be identical
+# between services. Use a unique password in each case.
+API_USER:     <%= name %>
+API_PASSWORD: xxxxxxxxxx
+
+# This is the base domain used for all Ocean calls.
+BASE_DOMAIN:  example.com
+
+# This enumerates the latest versions of all resources in the system, not just the
+# ones defined by this service. You should keep it updated at all times.
+# The special key _default is used as a fallback.
+API_VERSIONS:
+  _default: v1
+
+# This is the list of IP numbers for the Varnish instances. (For PURGE and BAN.)
+LOAD_BALANCERS: []
+
+# This is the list of IP numbers for the ZeroMQ log hosts. (Only used in production.)
+LOG_HOSTS: []
+
+
+##########################################################################################
+# This section allows you to specify values specific for a particular Rails
+# environment. Values defined here will take precedence over the default values.
+# Make sure the declarations in each section are indented properly.
+# NB: these overrides only affect your local development environment (which may run
+#     in any of these three states). In deployment, a generated version of this file
+#     is used.
+##########################################################################################
+
+development:
+
+
+test:
+
+
+production:
+  LOAD_BALANCERS:
+    - 1.1.1.1
+    - 2.2.2.2
+
+  LOG_HOSTS:
+    - 3.3.3.3
+    - 4.4.4.4

@@ -1,0 +1,936 @@
+== 4.1.5
+
+* Ruby version updated to 2.2.2 everywhere.
+
+== 4.1.4
+
+* Cleanup of templates and Gemfiles.
+
+== 4.1.3
+
+* Support for Rails 4.2.1 and Ruby 2.2.2.
+
+== 4.1.2
+
+* Minimum Ruby version is now 2.0.0.
+
+== 4.1.1
+
+* Removed the oj gem.
+
+== 4.1.0
+
+* Rails 4.2.0.
+
+== 4.0.11
+
+* Removed application_helper.rb, which makes it default to 
+  ocean-rails/app/helpers/application_helper.rb instead.
+
+== 4.0.10
+
+* The hyperlinks helper now uses #present? to check for presence.
+
+== 4.0.9
+
+* Application template updated.
+* mini_portile locked to 0.6.0, nokogiri locked to 1.6.3.1 due to compilation
+  issues. Remove explicit versions when the respective authors have fixed the
+  underlying problem.
+
+== 4.0.8
+
+* Api::Response now has an instance reader, #request, which returns the Typhoeus request
+  which spawned the Api::Response.
+
+== 4.0.7
+
+* Api.requests now re-authenticate transparently in Api.simultaneously blocks.
+  To do this, we use a direct Typhoeus call in Api.authenticate. This may change
+  your mocks, if you mock on Api.request. If so, move your mock to the HTTP level
+  using the webmock gem, or to Typhoeus.post().
+
+== 4.0.6
+
+* Api.simultaneously now memoizes identical calls during a single run.
+
+== 4.0.5
+
+* Api.requests can now be parallelised. The syntax is the following:
+
+   results = Api.simultaneously do |r|
+     r << Api.request("http://foo.bar", :get, retries: 3)
+     r << Api.request("http://foo.baz", :get, retries: 3)
+     r << Api.request("http://foo.quux", :get, retries: 3)
+   end
+
+  The value returned is an array of responses from the Api.request calls. If a request
+  has a post-processor block, the result will not be the response but what the block
+  returns.
+
+  TimeoutErrors and NoResponseError will not be raised in parallel mode.
+
+  Only Api.request is supported at the present time. Api::RemoteResource will follow.
+
+* Api.request parameter :backoff_max is now actually used. A typo made it always 30 seconds;
+  this has now been fixed.
+
+== 4.0.4
+
+* If any of the four getters (.get!, .get, #get!, and #get) receive an Ocean collection, 
+  the instance method +#collection+ will return an array of RemoteResources. NB: the getters
+  will still, in all cases, return the RemoteResource itself. The collection is always made
+  available as the value of +#collection+ on the RemoteResource which was used to obtain it.
+
+== 4.0.3
+
+* Api.request now handles a URI beginning with a / by prepending INTERNAL_OCEAN_API_URI.
+  As a result, Api::RemoteResource does, too.
+* Api.internalize_uri now internalises in all Chef environments.
+
+== 4.0.2
+
+* Fixed lingering Api.get. Now an Api.request.
+
+== 4.0.1
+
+* Retries again restricted to GET requests in Api.requests.
+
+== 4.0.0
+
+* Api.call, Api.get, Api.post, Api.put, and Api.delete removed. Major version change
+  since this is potentially a breaking change (though nothing in Core should use
+  these functions any more).
+
+== 3.9.0
+
+* Api::Response hyperlink :args keyword parameter now also accepted by #get! and #get.
+
+== 3.8.9
+
+* Api::Response hyperlink operations #post!, #post, #put!, #put, #delete! and #delete
+  now accept an :args keyword parameter for query args which will be added to the path
+  for the request. TODO: #get! och #get will follow tomorrow.
+
+== 3.8.8
+
+* Doc updates.
+
+== 3.8.7
+
+* Api::Response now has a #raw_body reader, which returns the response body
+  unprocessed, as a String. This is useful when re-transmitting large JSON
+  objects in order to bypass an inefficient JSON decode and re-encode.
+
+== 3.8.6
+
+* Api.run_async_job now takes an optional block, which will be invoked with any
+  TimeoutError or NoResponseError raised during the creation of the AsyncJob. 
+  This allows Api.run_async_job to be used to simplify controller logic.
+
+== 3.8.5
+
+* Api.run_async_job can now accept a precomputed job description hash. Just pass it
+  as the value of the keyword +:job+. It should be the only argument in the call.
+
+== 3.8.4
+
+* Api.run_async_job takes the same args as Api.async_job_body, but also runs the
+  resulting AsyncJob and returns the Api::Response. Exceptions are not intercepted
+  in any way, as they might be needed by the calling context. (Further functionality
+  will be added for use in controllers.)
+
+== 3.8.3
+
+* More docs for Api::RemoteResource.
+
+== 3.8.2
+
+* Api.async_job_body now takes a :body keyword for PUT and POST.
+
+== 3.8.1
+
+* If the href given to Api.async_job_body starts with a '/', it's prepended
+  with OCEAN_INTERNAL_API_URI.
+
+== 3.8.0
+
+* Api.async_job_body constructs a hash suitable as body in a POST to async_jobs.
+  It allows for terse specification of one-step jobs.
+
+== 3.7.6
+
+* Api::RemoteResource#refresh! and Api::RemoteResource#refresh implemented.
+  They both do a Conditional GET. If the resource isn't present or doesn't
+  have an ETag, they do a regular #get! or #get.
+
+== 3.7.5
+
+* Nonexistent hyperlinks now raise the exception HyperlinkMissing with a suitable
+  message whenever a hyperlink can't be found in the _links array.
+
+== 3.7.4
+
+* Api::RemoteResource now converts its PUT and POST bodies to JSON.
+
+== 3.7.3
+
+* Api::RemoteResource's exceptions GetFailed, PutFailed, PostFailed, and
+  DeleteFailed now include a message string giving the HTTP status and message,
+  e.g., "403 Forbidden".
+
+== 3.7.2
+
+* Api::RemoteResource now internalises all URIs. This is temporary, but it will
+  neither affect existing code, nor external calls or non-resource requests.
+
+== 3.7.1
+
+* Api::RemoteResource now has the instance accessor +response+, which contains
+  the Api::Response. It will be nil until a response has been received.
+
+== 3.7.0
+
+* Api::RemoteResource now has methods to do GET, PUT, POST, and DELETE requests.
+  Hyperlinks can also be used, which obviates the need to hardcode API paths.
+  This is important to eliminate out-of-band information in the back end.
+  The price you pay for this is an extra GET to retrieve the resource's _links,
+  but the overhead is very small thanks to Varnish.
+
+== 3.6.1
+
+* Api.encode_credentials is now Api.credentials. The old name has been deprecated.
+
+== 3.6.0
+
+* encode_credentials can now be called without any arguments, defaulting them to
+  API_USER and API_PASSWORD. Calling encode_credentials with only one arg will
+  raise an error.
+
+== 3.5.3
+
+* collection_etag can now also take an array. Documentation is in the code.
+
+== 3.5.2
+
+* X-Metadata is now contagious. If received by a service, it will also be sent in
+  any outgoing request. Cf. the new parameter to Api.request.
+
+== 3.5.1
+
+* The X-Metadata header is now truncated to 128 characters, to prevent possible misuse.
+
+== 3.5.0
+
+* The ZeroMQ log now includes the attribute "metadata", which is set from the X-Metadata
+  header of incoming requests.
+
+== 3.4.0
+
+* Api.request can now do automatic retries by using the new keyword args :retries, 
+  :backoff_time, :backoff_rate, and :backoff_max. Full documentation is available in
+  the source.
+
+* Api::RemoteResource.new, et al., now also accept the new retry parameters.
+
+== 3.3.3
+
+* All RemoteResource retrieval operations now only make HTTP calls when data isn't already 
+  present; also, .get and #get always return a RemoteResource even when the request failed.
+
+== 3.3.2
+
+* Api::RemoteResources now have their headers set even if the GET operation fails.
+* Api::RemoteResources.get and #get now always return a RemoteResource even if the GET
+  operation fails. The RemoteResource can be inspected to see whether the operation succeeded
+  or not.
+
+== 3.3.1
+
+* Api::RemoteResource no longer checks the Content-Type of the response. If it parses as JSON,
+  it will be accepted.
+
+== 3.3.0
+
+* Api::RemoteResource can now take a :credentials arg to allow any authenticated ApiUser to 
+  access remote resources.
+* Api::RemoteResource now raises an exception when the GET fails for any reason. The status
+  and status message are set before the exception is raised.
+* Api.request can now take a :credentials keyword, which, if supplied, will be used instead 
+  of the service's own credentials for authentication.
+* Api.authenticate will no longer set the service_token when authenticating using credentials 
+  not matching those of the service itself.
+
+== 3.2.0
+
+* Api::RemoteResource is now available. Initially, only GET request are supported.
+  POST, PUT, and DELETE will follow shortly.
+
+== 3.1.0
+
+* Added Api.internalize_uri.
+
+== 3.0.3
+
+* All initializers defined in the ocean-rails gem now begin with an underscore,
+  to make sure they run before other initializers.
+
+== 3.0.2
+
+* The hyperlink helper now accepts false values, suppressing the hyperlink altogether.
+
+== 3.0.1
+
+* Specs updated to RSpec 3 syntax.
+
+== 3.0.0
+
+* Api.request now only adds the Content-Type: application/json HTTP header when the request
+  is a POST or a PUT, i.e., when there really is a body present. This will break HTTP request
+  specs, hence the major version change.
+
+== 2.16.3
+
+* Rails 4.1.5.
+* Commented out require_conditional - the premise was unsound. 
+
+== 2.16.2
+
+* require_conditional now uses expires_now instead of 'expires_in 0, must_revalidate: true'.
+
+== 2.16.1
+
+* Api.send_mail keyword parameters updated.
+
+== 2.16.0
+
+* Api.send_mail added.
+
+== 2.15.0 
+
+* The hyperlinks helper, when given nil or false as a value, will entirely
+  suppress the hyperlink. This allows for conditional hyperlinks in an easy
+  way.
+
+== 2.14.1
+
+* Added :reauthentication with a default value of true to Api.request.
+
+== 2.14.0
+
+* Added :ssl_verifyhost with a default value of 2 to Api.request.
+
+== 2.13.0
+
+* Added AWS credential splitting in spec_helper.rb.
+
+== 2.12.1
+
+* Spring added to the development env.
+
+== 2.12.0
+
+* Generators updated for Rails 4.1.x series.
+
+== 2.11.6
+
+* Added keyword 'ssl_verifypeer' to Api.request. Needed for https to hosts with
+  non-pukka certs.
+
+== 2.11.5
+
+* Automatic retries of Api.get|put|xxx|call|request now use the value of the
+  HTTP header 'X-API-Token' for the x_api_token keyword arg. This means retries
+  are automatic.
+
+== 2.11.4
+
+* ffi-rzmq again restricted to the 1.x series (logging suddenly stopped in Ocean)
+
+== 2.11.3
+
+* ffi and ffi-rzmq versions lifted.
+* RSpec 2.99.x specified - we're not ready to switch to RSpec 3.0 yet.
+
+== 2.11.2
+
+* OVERRIDE_OCEAN_API_HOST removed. OCEAN_API_HOST is now the sole means of overriding
+  the API host. The logic for forbidding API access modified to allow OCEAN_API_HOST
+  to override this restriction, thus enabling front end client tests to use the entire
+  SOA by speciying a value for OCEAN_API_HOST as an environment variable in TeamCity.
+
+== 2.11.1
+
+* +api_render+ now accepts an array of non-ActiveRecord objects, i.e. collection
+  members not responding to +unscoped+.
+* Rails 4.1.
+
+== 2.11.0
+
+* api_render now takes a :partial keyword.
+
+== 2.10.3
+
+* Maintenance release due to the release of Rails 4.1. Now specifying Rails 4.0.x.
+
+== 2.10.2
+
+* Further simplification of the OR clause chaining.
+
+== 2.10.1
+
+* Multiple app/context pairs are now OR:ed together.
+
+== 2.10.0
+
+* Api.service_token replaces Api.token (which now is deprecated).
+* Api.request now accepts the +x_api_token+ keyword. if given, it's a string which will be 
+  used as an X-API-Token header.
+* Api.request now honours 400 and 419 responses, reauthenticating and retrying the request.
+* Api.request now raises Api::TimeoutError if the request timed out. 
+* Api.request now raises Api::NoResponseError when no response could be obtained.
+
+
+== 2.9.0
+
+* Views now have access to the predicates +superuser?+ and +member_of_group?+, which
+  test for membership of the +Superusers+ Group and membership of any given group(s),
+  respectively.
+
+== 2.8.1
+
+* Fixed regression error which caused unnecessary re-authentication.
+
+== 2.8.0
+
+* Code added for handling SQL tables with +app+ and +context+ columns, where Ocean Rights
+  specifying these have been created. The Ocean collection logic has been extended to
+  read any such app and context values specified in the return body of an authorisation
+  request, and to add conditions to SQL queries to restrict access to matching records
+  only. For more information, see the wiki.
+
+== 2.7.1
+
+* Removed the net-purge gem dependency, as it's no longer in use.
+
+== 2.7.0
+
+* Faraday is now gone and Typhoeus is used for all HTTP communication. Services have
+  been updated accordingly (auth, jobs).
+* Api.request is now used to do all HTTP requests. It returns a Api::Response instance
+  and never raises any exceptions.
+
+== 2.6.2
+
+* Reverted back to using Faraday.
+
+== 2.6.1
+
+* Explicit require of the Typhoeus gem.
+
+== 2.6.0
+
+* Typhoeus used for all HTTP requests. Faraday removed.
+
+== 2.5.0
+
+* Now using Oj for JSON conversion.
+
+== 2.4.3
+
+* No AWS initialisation is now done. Instead, the environment variables are set
+  in order for init code to pick them up as defaults later.
+
+== 2.4.2
+
+* AWS initialisation now also examines environment variables AWS_ACCESS_KEY_ID,
+  AWS_SECRET_ACCESS_KEY, and AWS_REGION. If all are present, no aws.yml file is
+  required or used.
+
+== 2.4.1
+
+* Missing status code handled by the ZeroMQ logger (required when running the asset pipeline
+  in production, something which is to be avoided).
+
+== 2.4.0
+
+* Now initialising both AWS and Aws if present. AWS = aws-sdk v1.x, Aws = aws-sdk-core v2.x
+
+== 2.3.5
+
+* Put cache_control back in again.
+
+== 2.3.4
+
+* Commented out cacne_control.
+
+== 2.3.3
+
+* Removed max_age.
+
+== 2.3.2
+
+* Added cache-control header to ZMQ log.
+
+== 2.3.1
+
+* Corrected naming inconsistencies.
+
+== 2.3.0
+
+* Added username and max_age to the production logger for authenticated requests.
+
+== 2.2.1
+
+* Now using a thread variable to transmit the authentication token, if present, 
+  to the production logger.
+
+== 2.2.0
+
+* Added the authentication token, if present, to the production log.
+
+== 2.1.2
+
+* Whitespace, replaced a != with a <.
+
+== 2.1.1
+
+* Missing collection attributes +page+, +page_size+, and +total_pages+ added.
+
+== 2.1.0
+
+* Full Paged Collection format implemented. 
+  C.f. http://wiki.oceanframework.net/index.php/Resource_Collections
+
+== 2.0.8
+
+* Reinstated +total_count+. We thereby have the full Unpaged Collection Format.
+
+== 2.0.7
+
+* Removing the +total_count+ for now, which leaves us sort of half-way between
+  the Minimal and the Unpaged Format.
+
+== 2.0.6
+
+* Now keeping the where.
+
+== 2.0.5
+
+* It was +total_count+. Trying a dup.
+
+== 2.0.4
+
+* Debugging. Removed +total_count+ to see if that's what causing the 422s.
+
+== 2.0.3
+
+* Debugging.
+
+== 2.0.2
+
+* Debugging.
+
+== 2.0.1
+
+* Collections now conform to the Unpaged Collection Format, including +count+,
+  +total_count+ and a self hyperlink.
+
+== 2.0.0
+
+* The collection format has started to evolve into a resource in its own right.
+  Whereas in 1.x collections were simple arrays, we now wrap this in a hash as the
+  value of the attribute +resources+. This allows us to add meta-data to the
+  resource, such as count, total count, page number, total pages, and it also
+  allows us to add a _links structure of hyperlinks, with URIs to itself for CRUD
+  operations, and situational hyperlinks to the first, previous, next and/or last
+  page. This first version implements the Minimal Collection Format described in
+  http://wiki.oceanframework.net/index.php/Resource_Collections#Minimal_Collection_Format
+
+== 1.30.1
+
+* Explicitly resetting Thread.current[:filter] to nil to prevent it from leaking
+  into subsequent requests.
+
+== 1.30.0
+
+* Added :create_timestamp and :update_timestamp which default to +:created_at+
+  and +:updated_at+, respectively. These are now used in +collection_etag+
+  to obtain the last updated resource in a collection. The order is reset using
+  +reorder+.
+
+== 1.29.8
+
+* Conditionalised rounding of view_runtime and db_runtime.
+
+== 1.29.7
+
+* Monkey-patching Rails::Rack::Logger in production to suppress the 
+  "request started" message.
+
+== 1.29.6
+
+* The exit in everything but production (mea culpa) replaced by a conditional.
+  Integrated things into the ZeromqLogger initializer.
+
+== 1.29.5
+
+* One-line logging enabled. (Backtraces still need better handling, though.)
+
+== 1.29.4
+
+* The SelectiveLogger changed to suppress the Started log message in production.
+  This is in preparation for one-line logging.
+
+== 1.29.3
+
+* Added a formatter method to ZeromqLogger. Seems to be needed when running
+  under Webrick, which sometimes is done locally.
+
+== 1.29.2
+
+* Mystery solved: LOG_HOSTS isn't defined when ZeroMQ logger is instantiated.
+  Fixed. Logger init code moved to config/environments/production.rb.
+
+== 1.29.1
+
+* Found a working, albeit non-DRY way of logging everything via ZeroMQ. It
+  involves (a) giving up the tagged logger, (b) setting the ZMQ logger twice
+  (once in an initializer in this gem, once in config/application.rb of the
+  logging application [NB: config/initializers/production.rb will NOT work]),
+  and (c) suppressing view render log lines via a config.action_view = nil in
+  config/initializers/production.rb. Why it has to be done this way is still
+  a mystery.
+
+== 1.29.0
+
+* ZeroMQ logging adapted to Rails 4 and re-enabled in production. If the environment
+  variable NO_ZEROMQ_LOGGING is present, ZeroMQ logging will be disabled.
+
+== 1.28.5
+
+* Restricted the version of ffi-rzmq to ~> 1.0, since 2.0.0 breaks deployment.
+
+== 1.28.4
+
+* The ocean_setup_generator now correctly installs application_helper.rb. Many thanks to 
+  Sam Granieri, who issued the first pull request to the Ocean open source project!
+
+== 1.28.3
+
+* Added the TEST_API_PASSWORD splitting code to the spec_helper template.
+
+== 1.28.2
+
+* Api.escape now also escapes [ and ].
+
+== 1.28.1
+
+* Api.escape erroneously escaped the $ character. Fixed.
+
+== 1.28.0
+
+* Api.escape now only escapes the characters \, |, and ?. The corresponding unescaping
+  is done in Varnish (default.vcl) so that BAN regexps work as expected. This should fix
+  the aggressive caching.
+
+== 1.27.6
+
+* The application generator now always sets up an aws.yml.example file.
+* Amended spec_helper.rb commented-out section for client apps.
+
+== 1.27.5
+
+* Version 0.5.6 of ocean-dynamo specified as minimum.
+
+== 1.27.4
+
+* Updated generators.
+
+== 1.27.3
+
+* TeamCity can now override both the master and staging environment passwords
+  using OVERRIDE_API_PASSWORD. Separate master and staging passwords using a comma,
+  without a following space.
+
+== 1.27.2
+
+* Blank OVERRIDE_XXX vars are now ignored.
+
+== 1.27.1
+
+* A config.yml constant XXX can now be overridden by a corresponding ENV
+  variable OVERRIDE_XXX. This is used to specify passwords when running
+  under TeamCity, where the untailored config.yml.example file is used.
+
+== 1.27.0
+
+* Templates now use postgresql rather than mysql in the original Gemfile.
+
+== v1.26.2
+
+* ZeroMQ logging temporarily turned off
+
+== v1.26.1
+
+* Range matching now also works on string attributes. Positive and negative integers and
+  floats also supported.
+
+== v1.26.0
+
+* Collection matchers now detect integer and float ranges.
+
+== v1.25.4
+
+* Generators now set rails-4.0.2.
+
+== v1.25.3
+
+* Pagination corrected.
+
+== v1.25.2
+
+* Varnish BAN URIs now escaped. Regexes need escaping.
+
+== v1.25.1
+
+* Specs fixed.
+
+== v1.25.0
+
+* Collection matchers now accept ranges.
+* Templates updated to filter out boilerplate code from coverage tests.
+* Templates updated to specify Rails 4.x, not 4.0.0. 
+
+== v1.24.2
+
+* Generator now sets rails-4.0.1.
+
+== v1.24.1
+
+* app/helpers/application_helper.rb reinstated in the ocean service generator. It seems
+  that inheritance doesn't work with helpers - look into this at a later point in time.
+
+== v1.24.0
+
+* Application template updated.
+* Reintroduced the minimum Ruby version spec.
+
+== v1.23.12
+
+* Minimum Ruby version removed from gemspec file. The requirement is still there,
+  just not explicitly stated.
+
+== v1.23.11
+
+* Minimum Ruby version removed from gemspec file. The requirement is still there,
+  just not explicitly stated.
+
+== v1.23.10
+
+* Minimum Ruby version specified as '~> 2' instead of '>= 2.0.0' as the latter
+  doesn't work in Ocean deployment for some reason.
+
+== v1.23.9
+
+* xxxx.yml config files can now use ERB evaluation.
+
+== v1.23.8
+
+* xxxx.yml.example defaulting now works under TeamCity.
+
+== v1.23.7
+
+* Still more. Now using OCEAN_API_HOST.
+
+== v1.23.6
+
+* Still more.
+
+== v1.23.5
+
+* Yet more faffing around.
+
+== v1.23.4
+
+* Yet more faffing around.
+
+== v1.23.3
+
+* More faffing around with loading of yml.example files for TeamCity.
+
+== v1.23.2
+
+* xxxxx.yml.example files now potentially loaded in test and production mode.
+  This is necessary to support TeamCity app init.
+
+== v1.23.1
+
+* Bug fix to previous release: nothing is now done if there's no example file.
+
+== v1.23.0
+
+* Automatic loading of aws.yml in a similar manner to that of config.yml.
+  xxx.yml will be processed if present. If not, and the Rails environment
+  is production, xxx.yml.example will be processed. Otherwise, an error
+  message will be printed.
+
+== v1.22.7, v1.22.8
+
+* Updated bundle, specified minimum version of ocean-dynamo.
+
+== v1.22.6
+
+* OceanDynamo::Base => OceanDynamo::Table
+
+== v1.22.4
+
+* Conditionalised exception handling in the resource controller in order to support
+  both ActiveRecord and OceanDynamo.
+
+== v1.22.3
+
+* String versions of exceptions in multi-class resource controller.
+
+== v1.22.2
+
+* Conditional loading for ActiveModel and OceanDynamo.
+
+== v1.22.1
+
+* OceanDynamo::RecordNotSaved replaced by OceanDynamo::RecordNotUnique.
+
+== v1.22.0
+
+* OceanDynamo::RecordNotSaved now intercepted like the ActiveRecord counterpart.
+* Full support for OceanDynamo models. Currently working on bringing the controller
+  logic to an identical state for OceanDynamo as for ActiveRecord.
+
+== v1.19.0
+
+* Added Api.adorn_basename to create unique names for shared resources like AWS queues
+  and DB names, depending on the execution environment (Chef and Rails).
+* Using the webmock gem to mock HTTP traffic in specs for the Api class.
+
+== v1.18.8
+
+* Reverted back to unconditionalised api_user_url.
+
+== v1.18.7
+
+* Debug release.
+
+== v1.18.6
+
+* Debug release.
+
+== v1.18.5
+
+* Debug release.
+
+== v1.18.4
+
+* Conditionalised the definition of the helper +api_user_url+.
+
+== v1.18.3
+
+* Yet another update to the +ocean_setup+ generator.
+
+== v1.18.2
+
+* The +ocean_setup+ generator updated again.
+
+== v1.18.1
+
+* The +ocean_setup+ generator updated.
+
+== v1.18.0
+
+* The +ocean-rails+ gem is now an engine. This allows us to serve the <tt>/alive</tt>
+  controller, the error controller, the application helper and various initializers
+  from the gem rather than by installing source templates via the app generator. 
+
+== v1.17.1
+
+* Application controller filters +require_x_api_token+, +authorize_action+, and
+  +require_conditional+ now all do a <tt>expires_in 0, must_revalidate: true</tt>
+  when they fail, to prevent caching of negatives.
+
+== v1.17.0
+
+* The +before_action+ +required_conditional+ has been added. It requires the request
+  to be a conditional one, i.e. it must have either an +If-None-Match+ or an +If-Modified-Since+
+  HTTP header, or both. If the request isn't conditional, a 428 error is returned. The body will 
+  be a standard API error message, with two error strings: <tt>"Precondition Required"</tt> and 
+  <tt>"If-None-Match and/or If-Modified-Since missing"</tt>.
+* Added documentation for +deny_with+.
+
+== v1.16.1
+
+* Added specs for some parts hitherto without direct tests.
+* Added deny_with, as a counterpart to permit_with.
+* Added Ocean blog URL.
+
+== v1.16.0
+
+* Now using ruby-2.0.0-p247.
+
+== v1.15.6
+
+* +ocean_resource_controller+ now also takes the keyword arg +permitted_attributes+,
+  which is accessible via the class accessor +ocean_resource_controller_permitted_attributes+.
+  As yet the keyword arg has no effect, but it will be used when switching to Strong 
+  Parameters, so we can get rid of the last Rails 3 compatibility gem.
+* Better gem description in the gemspec.
+* Changed the format of the CHANGELOG to RDoc.
+
+== v1.15.5
+
+* Corrected badge.
+
+== v1.15.4
+
+* Badge added.
+* Documentation changes.
+
+== v1.15.3
+
+* +render_validation_errors+ +except+ arg handling corrected.
+
+== v1.15.2
+
+* +ocean_resource_controller+ now takes a +no_validation_errors_on+ keyword (default []) which
+  enumerates the attributes for which 422 validation error info should not be given.
+  This is sometime useful for password information such as hashes and salts.
+  Also, +render_validation_errors+ takes a new keyword parameter +except+ in the same format.
+
+* The API error for non-unique resources no longer mention the class of the resource, but 
+  always is <tt>"Resource not unique"</tt>.
+
+== v1.15.1
+
+* Conditionalised the +rescue_from+ controller clauses: only done when ActiveRecord is
+  present.
+
+== v1.15.0
+
+* +POST+ and +PUT+ actions greatly simplified through the use of controller-level +rescue_from+
+  handlers.
+
+== v1.14.3
+
+* RDoc documentation for the +ocean-rails+ gem is now complete.
+
+== v1.14.2
+
+* Corrected typo.
+
+== v1.14.1
+
+* Added the MIT license to the gemspec file. Added Rubygems URL and mailing list
+  info to the +README+.
+
+== v1.14.0
+
+* Initial release via Rubygems.org.
+

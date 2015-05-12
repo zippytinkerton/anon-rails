@@ -1,0 +1,158 @@
+== The Anon gem
+
+This repository contains the Anon ruby gem, containing common framework functionality
+for the Ruby on Rails part of the architecture. 
+
+Anon requires Ruby 2.0 and Ruby on Rails 4.0.0 or later.
+
+{<img src="https://badge.fury.io/rb/anon-rails.png" alt="Gem Version" />}[http://badge.fury.io/rb/anon-rails]
+
+
+=== Documentation
+* Anon gem on Rubygems: https://rubygems.org/gems/anon-rails
+* Anon gem API: http://rdoc.info/github/AnonDev/anon-rails/frames
+* Anon framework: http://wiki.anonframework.net
+* Anon mailing list: http://groups.google.com/group/anonframework
+* Anon blog: http://blog.anonframework.net
+
+
+=== Creating an Anon Rails app
+
+The anon gem provides an application template and generator to quickly and easily set up 
+a complete Rails application for Anon. Simply execute the following in your terminal:
+
+ rails new the_app_name -m https://raw.github.com/AnonDev/anon-rails/master/template.rb
+
+Answer yes to all overwrite queries. 
+
+There is only one piece of manual setup to perform. You must supply the Anon app with
+your site-specific data: the base domain name, the password for Auth, etc. To do this,
+simply edit <code>config/config.yml</code>. 
+
+There is also a file called <code>config.yml.example</code> in the
+same directory for reference. Don't change it: it is under version control. The file
+you should change, <code>config/config.yml</code>, isn't, as it will contain site-specific and/or
+confidential data.
+
+There are no specs to run at this point: all functionality provided by the +anon-rails+
+gem already is exhaustively tested in the +anon-rails+ spec suite.
+
+
+=== Creating an Anon Resource
+
+To create an aggressively cached Anon resource based on an SQL model, do the following:
+
+ rails g scaffold quux name:string description:string \ 
+                       lock_version:integer created_by:string updated_by:string
+
+This will create the basic model and associated model and controller scaffolding code, 
+which we will modify shortly. Now run
+
+ rake db:migrate
+
+This will create the SQL table for the resource. Next, we need to replace the HTML-centric
+scaffold code generated above with RESTful JSON scaffold code for Anon:
+
+ rails g anon_scaffold quux
+
+Answer yes to all overwrite queries. Now examine +config/routes.rb+. You will find a new resource
+declaration for quuxes. Move it inside the versioned scope and add and +except:+ clause to exclude
+the Rails controller actions not used in a REST Api:
+
+ scope "v1" do
+   resource :quuxes, except: [:new, :edit]
+ end
+
+To verify that everything works as it should, run the tests:
+
+ rspec
+
+All tests should pass. The test coverage should be very close to 100%. A FactoryGirl factory for the new model will be created, there will be model unit tests to check for the presence of all attributes and to verify collection searches, routing tests, controller tests for each action, and view tests to verify that the JSON representation is complete and correct.   
+
+You can now proceed to tailor the new resource to your needs. You will want to add other attributes to the model or remove some or all of the default ones; you can change the JSON representation by modifying the view; and you might want to add or remove controller actions, e.g. to support secondary collections and relations to other resources. And as you no doubt are a responsible, informed developer, you will of course do all this using TDD and/or BDD techniques.
+
+
+=== Running the specs
+
+To run the specs for the anon-rails gem, you must first install the bundle. It will download
+a gem called +fake_dynamo+, which runs a local, in-memory functional clone of Amazon DynamoDB.
+We use +fake_dynamo+ during development and testing.
+
+First of all, copy the AWS configuration file from the template:
+
+ cp spec/dummy/config/aws.yml.example spec/dummy/config/aws.yml
+
+NB: +aws.yml+ is excluded from source control. This allows you to enter your AWS credentials
+safely. Note that +aws.yml.example+ is under source control: don't edit it.
+
+Make sure your have version 0.1.3 of the +fake_dynamo+ gem. It implements the +2011-12-05+ version
+of the DynamoDB API. We're not yet using the +2012-08-10+ version, as the +aws-sdk+ ruby gem
+doesn't fully support it. We'll make the change as soon as +aws-sdk+ is updated. Reportedly,
+it's in the works.
+
+Next, start +fake_dynamo+:
+
+  fake_dynamo --port 4567
+
+If this returns errors, make sure that <tt>/usr/local/var/fake_dynamo</tt> exists and
+is writable:
+
+ sudo mkdir -p /usr/local/var/fake_dynamo
+ sudo chown peterb:staff /usr/local/var/fake_dynamo
+
+When +fake_dynamo+ runs normally, open another window and issue the following command:
+
+ curl -X DELETE http://localhost:4567
+
+This will reset the +fake_dynamo+ database. It's not a required operation when starting
++fake_dynamo+; we're just using it here as a test that the installation works. It will
+be issued automatically as part of the test suite, so don't expect test data to survive
+between runs.
+
+Next, copy the +config.yml+ file from its template:
+
+  cp spec/dummy/config/config.yml.example spec/dummy/config/config.yml
+
+Edit the contents of +config.yml+ to suit your setup.
+
+You must now generate the SQLite databases:
+
+ rake db:migrate
+ RAILS_ENV=test rake db:migrate
+
+With +fake_dynamo+ running, you should now be able to do
+
+ rspec
+
+All tests should pass.
+
+
+=== Rails console
+
+The Rails console is available from the built-in dummy application:
+
+ cd spec/dummy
+ rails console
+
+You're now in a sandbox environment (thanks to +webmock+): HTTP accesses are disallowed;
+each HTTP access you make will be intercepted with a message describing exactly how to
+mock it away.
+
+To enable HTTP traffic:
+
+ WebMock.allow_net_connect!
+
+Please refer to the +webmock+ gem documentation for full information. It's possible to
+prevent traffic only to specific hosts (e.g. +localhost+).
+
+You may also need to initialise the table connection:
+
+ CloudModel.establish_db_connection
+
+This will, amongst other things, also create the CloudModel table if it doesn't already
+exist. On Amazon, this will take a little while. With +fake_dynamo+, it's practically
+instant.
+
+When you leave the console, you must navigate back to the Rails directory (<tt>cd ../..</tt>)
+in order to be able to run RSpec again.
+

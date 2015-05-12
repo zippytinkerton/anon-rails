@@ -1,0 +1,17 @@
+.bundle/
+log/*.log
+pkg/
+spec/dummy/db/*.sqlite3
+spec/dummy/log/*.log
+spec/dummy/tmp/
+spec/dummy/.sass-cache
+
+# Ignore coverage artefacts
+/coverage
+
+# Ignore Tork config
+/.tork
+
+# Ignore yml config files in dummy app
+spec/dummy/config/config.yml
+spec/dummy/config/aws.yml
