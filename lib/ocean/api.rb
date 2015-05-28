@@ -107,8 +107,12 @@ class Api
     # Returns the HTTP response body parsed from JSON. This is done lazily and only once.
     #
     def body
-      Rails.logger.info ">>> OCEAN RESPONSE BODY #{@response.response_body}"
-      @body ||= @response.response_body.blank? ? nil : JSON.parse(@response.response_body)
+
+      @body ||= @response.response_body.blank? ? nil :  begin
+                                                          JSON.parse(@response.response_body)
+      rescue => error
+      Rails.logger.info ">>> OCEAN RESPONSE JSON PARSE EXCEPTION. Body: #{@response.response_body}"
+      end
     end
 
     #
