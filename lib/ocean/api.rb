@@ -200,6 +200,7 @@ class Api
     url = url.first == "/" ? "#{INTERNAL_OCEAN_API_URL}#{url}" : Api.internalize_uri(url)
 
     start_time = Time.now
+    req_id = Random.rand(999999)
     begin
       reqlog = {
         'url' => url,
@@ -207,7 +208,8 @@ class Api
         'headers' => headers,
         'metadata'=> x_metadata,
         'reauthentication'=> reauthentication,
-        'body' => body
+        'body' => body,
+        'req-id' => req_id
       }
       Rails.logger.info ">>> OCEAN REQUEST #{reqlog}"
     rescue => error
@@ -235,7 +237,8 @@ class Api
         'headers' => resp.headers,
         'metadata'=> x_metadata,
         'time' => "#{Time.now - start_time} s",
-        'body' => resp.body
+        'body' => resp.body,
+        'req-id' => req_id
       }
       Rails.logger.info "<<< OCEAN PARALLEL RESPONSE #{reslog}"
     rescue => error
@@ -297,21 +300,31 @@ class Api
     @hydra.run
     if response.is_a?(Response)
       # Raise any exceptions
+      if response.timed_out?
+        Rails.logger.info "<<< OCEAN TIMED OUT RESPONSE response: #{response} req-id: #{req_id}"
+      end
+      if response.status == 0
+        Rails.logger.info "<<< OCEAN RESPONSE STATUS 0 RESPONSE response: #{response} req-id: #{req_id}"
+      end
       raise Api::TimeoutError, "Api.request timed out" if response.timed_out?
       raise Api::NoResponseError, "Api.request could not obtain a response" if response.status == 0
     end
 
     begin
-      resp = response || {}
-      reslog = {
-        'calling_url' => url,
-        'status' => resp.status,
-        'headers' => resp.headers,
-        'metadata'=> x_metadata,
-        'time' => "#{Time.now - start_time} s",
-        'body' => resp.body
-      }
-      Rails.logger.info "<<< OCEAN NORMAL RESPONSE #{reslog}"
+      if !got_response
+        got_response = true
+        resp = response || {}
+        reslog = {
+          'calling_url' => url,
+          'status' => resp.status,
+          'headers' => resp.headers,
+          'metadata'=> x_metadata,
+          'time' => "#{Time.now - start_time} s",
+          'body' => resp.body,
+          'req-id' => req_id
+        }
+        Rails.logger.info "<<< OCEAN NORMAL RESPONSE #{reslog}"
+      end
     rescue => error
       Rails.logger.info "<<< OCEAN NORMAL RESPONSE exception #{error}"
     end
@@ -427,6 +440,7 @@ class Api
     url = "#{INTERNAL_OCEAN_API_URL}/v1/authentications"
 
     start_time = Time.now
+    got_response = false
     begin
       reqlog = {
         'url' => url
@@ -439,14 +453,17 @@ class Api
     response = Typhoeus.post url, body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
 
     begin
-      resp = response || {}
-      reslog = {
-        'calling_url' => url,
-        'status' => resp.code,
-        'time' => "#{Time.now - start_time} s",
-        'body' => resp.body
-      }
-      Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
+      if !got_response
+        got_response = true
+        resp = response || {}
+        reslog = {
+          'calling_url' => url,
+          'status' => resp.code,
+          'time' => "#{Time.now - start_time} s",
+          'body' => resp.body
+        }
+        Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
+      end
     rescue => error
       Rails.logger.info "<<< OCEAN AUTH RESPONSE exception #{error}"
     end
