@@ -200,18 +200,22 @@ class Api
     url = url.first == "/" ? "#{INTERNAL_OCEAN_API_URL}#{url}" : Api.internalize_uri(url)
 
     start_time = Time.now
+    got_response = false
     req_id = Random.rand(999999)
     begin
-      reqlog = {
-        'url' => url,
-        'method' => http_method,
-        'headers' => headers,
-        'metadata'=> x_metadata,
-        'reauthentication'=> reauthentication,
-        'body' => body,
-        'req-id' => req_id
-      }
-      Rails.logger.info ">>> OCEAN REQUEST #{reqlog}"
+      if !got_response
+        got_response = true
+        reqlog = {
+          'url' => url,
+          'method' => http_method,
+          'headers' => headers,
+          'metadata'=> x_metadata,
+          'reauthentication'=> reauthentication,
+          'body' => body,
+          'req-id' => req_id
+        }
+        Rails.logger.info ">>> OCEAN REQUEST #{reqlog}"
+      end
     rescue => error
       Rails.logger.info ">>> OCEAN REQUEST exception #{error}"
     end
@@ -440,7 +444,6 @@ class Api
     url = "#{INTERNAL_OCEAN_API_URL}/v1/authentications"
 
     start_time = Time.now
-    got_response = false
     begin
       reqlog = {
         'url' => url
@@ -453,17 +456,14 @@ class Api
     response = Typhoeus.post url, body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
 
     begin
-      if !got_response
-        got_response = true
-        resp = response || {}
-        reslog = {
-          'calling_url' => url,
-          'status' => resp.code,
-          'time' => "#{Time.now - start_time} s",
-          'body' => resp.body
-        }
-        Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
-      end
+      resp = response || {}
+      reslog = {
+        'calling_url' => url,
+        'status' => resp.code,
+        'time' => "#{Time.now - start_time} s",
+        'body' => resp.body
+      }
+      Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
     rescue => error
       Rails.logger.info "<<< OCEAN AUTH RESPONSE exception #{error}"
     end
