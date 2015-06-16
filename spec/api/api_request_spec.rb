@@ -11,8 +11,8 @@ describe Api, :type => :request do
 
     it "should raise an exception if the return status isn't 201, 400, 403, or 500" do
       stub_request(:post, "#{INTERNAL_OCEAN_API_URL}/v1/authentications").
-         to_return(:status => 666, :body => "")      
-      expect { Api.authenticate }.to raise_error("Authentication weirdness")
+         to_return(:status => 666, :body => "Some error")
+      expect { Api.authenticate }.to raise_error("Authentication weirdness, Status: 666 body: Some error")
     end
 
     it "should set @service_token if the credentials match the service's own" do

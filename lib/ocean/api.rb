@@ -111,7 +111,8 @@ class Api
       @body ||= @response.response_body.blank? ? nil :  begin
                                                           JSON.parse(@response.response_body)
       rescue => error
-      Rails.logger.info ">>> OCEAN RESPONSE JSON PARSE EXCEPTION. Body: #{@response.response_body}"
+        Rails.logger.error ">>> OCEAN RESPONSE JSON PARSE EXCEPTION. Body: #{@response.response_body}"
+        raise error
       end
     end
 
@@ -488,7 +489,7 @@ class Api
       nil   
     else
       # Should never end up here.
-      raise "Authentication failiure. Status: #{response.code} body:#{response.body}"
+      raise "Authentication weirdness, Status: #{response.code} body: #{response.body}"
     end
   end
   
