@@ -107,11 +107,11 @@ class Api
     # Returns the HTTP response body parsed from JSON. This is done lazily and only once.
     #
     def body
-
-      @body ||= @response.response_body.blank? ? nil :  begin
-                                                          JSON.parse(@response.response_body)
+      @body ||= @response.response_body.blank? ? nil :
+        begin
+          JSON.parse(@response.response_body)
       rescue => error
-        Rails.logger.error ">>> OCEAN RESPONSE JSON PARSE EXCEPTION. Body: #{@response.response_body}"
+        Rails.logger.error ({'>>> OCEAN RESPONSE JSON PARSE EXCEPTION' => "#{@response.response_body}"}).to_json
         raise error
       end
     end
@@ -211,18 +211,20 @@ class Api
       if !got_response
         got_response = true
         reqlog = {
-          'url' => url,
-          'method' => http_method,
-          'headers' => headers,
-          'metadata'=> x_metadata,
-          'reauthentication'=> reauthentication,
-          'body' => body,
-          'req-id' => req_id
+          '>>> OCEAN REQUEST'=> {
+            'url' => url,
+            'method' => http_method,
+            'headers' => headers,
+            'metadata'=> x_metadata,
+            'reauthentication'=> reauthentication,
+            'body' => JSON.parse(body),
+            'req-id' => req_id
+          }
         }
-        Rails.logger.info ">>> OCEAN REQUEST #{reqlog}"
+        Rails.logger.info reqlog.to_json
       end
     rescue => error
-      Rails.logger.info ">>> OCEAN REQUEST exception #{error}"
+      Rails.logger.error ({'>>> OCEAN REQUEST exception' => "#{error}"}).to_json
     end
 
     # This is a Proc when run queues the request and schedules retries
@@ -241,17 +243,19 @@ class Api
     begin
       resp = response || {}
       reslog = {
-        'calling_url' => url,
-        'status' => resp.status,
-        'headers' => resp.headers,
-        'metadata'=> x_metadata,
-        'time' => "#{Time.now - start_time} s",
-        'body' => resp.body,
-        'req-id' => req_id
+        '<<< OCEAN PARALLEL RESPONSE' => {
+          'calling_url' => url,
+          'status' => resp.status,
+          'headers' => resp.headers,
+          'metadata'=> x_metadata,
+          'time' => "#{Time.now - start_time} s",
+          'body' => resp.body,
+          'req-id' => req_id
+        }
       }
-      Rails.logger.info "<<< OCEAN PARALLEL RESPONSE #{reslog}"
+      Rails.logger.info reslog.to_json
     rescue => error
-      Rails.logger.info "<<< OCEAN PARALLEL RESPONSE exception #{error}"
+      Rails.logger.error ({'<<< OCEAN PARALLEL RESPONSE exception' => "#{error}"}).to_json
     end
 
         case response.status
@@ -310,10 +314,10 @@ class Api
     if response.is_a?(Response)
       # Raise any exceptions
       if response.timed_out?
-        Rails.logger.info "<<< OCEAN TIMED OUT RESPONSE response: #{response} req-id: #{req_id}"
+        Rails.logger.info ({"<<< OCEAN TIMED OUT RESPONSE response" => "#{response} req-id: #{req_id}"}).to_json
       end
       if response.status == 0
-        Rails.logger.info "<<< OCEAN RESPONSE STATUS 0 RESPONSE response: #{response} req-id: #{req_id}"
+        Rails.logger.info ({"<<< OCEAN RESPONSE STATUS 0 RESPONSE response" => "#{response} req-id: #{req_id}"}).to_json
       end
       raise Api::TimeoutError, "Api.request timed out" if response.timed_out?
       raise Api::NoResponseError, "Api.request could not obtain a response" if response.status == 0
@@ -324,18 +328,20 @@ class Api
         got_response = true
         resp = response || {}
         reslog = {
-          'calling_url' => url,
-          'status' => resp.status,
-          'headers' => resp.headers,
-          'metadata'=> x_metadata,
-          'time' => "#{Time.now - start_time} s",
-          'body' => resp.body,
-          'req-id' => req_id
+          '<<< OCEAN NORMAL RESPONSE' => {
+            'calling_url' => url,
+            'status' => resp.status,
+            'headers' => resp.headers,
+            'metadata'=> x_metadata,
+            'time' => "#{Time.now - start_time} s",
+            'body' => resp.body,
+            'req-id' => req_id
+          }
         }
-        Rails.logger.info "<<< OCEAN NORMAL RESPONSE #{reslog}"
+        Rails.logger.info reslog.to_json
       end
     rescue => error
-      Rails.logger.info "<<< OCEAN NORMAL RESPONSE exception #{error}"
+      Rails.logger.error ({'<<< OCEAN NORMAL RESPONSE exception' => "#{error}"}).to_json
     end
     response
   end
@@ -451,26 +457,30 @@ class Api
     start_time = Time.now
     begin
       reqlog = {
-        'url' => url
+        ">>> OCEAN AUTH REQUEST" => {
+          'url' => url
+        }
       }
-      Rails.logger.info ">>> OCEAN AUTH REQUEST #{reqlog}"
+      Rails.logger.info reqlog.to_json
     rescue => error
-      Rails.logger.info ">>> OCEAN AUTH REQUEST exception #{error}"
-    end#
+      Rails.logger.error ({'>>> OCEAN AUTH REQUEST exception' => "#{error}"}).to_json
+    end
 
     response = Typhoeus.post url, body: "", headers: {'X-API-Authenticate' => credentials(username, password)}
 
     begin
       resp = response || {}
       reslog = {
-        'calling_url' => url,
-        'status' => resp.code,
-        'time' => "#{Time.now - start_time} s",
-        'body' => resp.body
+        '<<< OCEAN AUTH RESPONSE' => {
+          'calling_url' => url,
+          'status' => resp.code,
+          'time' => "#{Time.now - start_time} s",
+          'body' => resp.body
+        }
       }
-      Rails.logger.info "<<< OCEAN AUTH RESPONSE #{reslog}"
+      Rails.logger.info reslog.to_json
     rescue => error
-      Rails.logger.info "<<< OCEAN AUTH RESPONSE exception #{error}"
+      Rails.logger.error ({'<<< OCEAN AUTH RESPONSE exception' => "#{error}"}).to_json
     end
 
     case response.code
