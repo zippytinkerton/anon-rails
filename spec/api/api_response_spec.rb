@@ -65,15 +65,16 @@ describe Api::Response, :type => :request do
 	end
 
   it "should throw a JSON::ParseError if the response cannot be parsed as json" do
-		error_response = Api::Response.new(
-				double response_code:    500,
-							 status_message:   "Internal Server Error",
-							 response_headers: "Foo: 123\r\nBar: baz\r\nQuux-Zuul: fedcba",
-							 response_body:    '<h1>Internal Server Error</h1>',
-							 timed_out?:       false,
-							 success?:         false,
-							 modified?:        true)
-		expect {error_response.body}.to raise_error(JSON::ParserError)
-	end
+    error_response = Api::Response.new(
+      double response_code:    500,
+      status_message:   "Internal Server Error",
+      response_headers: "Foo: 123\r\nBar: baz\r\nQuux-Zuul: fedcba",
+      response_body:    '<h1>Internal Server Error</h1>',
+      timed_out?:       false,
+      success?:         false,
+      modified?:        true,
+      request: true
+    )
+    expect {error_response.body}.to raise_error(JSON::ParserError)
+  end
 end
-  

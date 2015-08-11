@@ -111,7 +111,10 @@ class Api
         begin
           JSON.parse(@response.response_body)
       rescue => error
-        Rails.logger.error ({'>>> OCEAN RESPONSE JSON PARSE EXCEPTION' => "#{@response.response_body}"}).to_json
+        Rails.logger.error ({
+          '>>> OCEAN RESPONSE JSON PARSE EXCEPTION' => "#{@response.response_body}",
+          'request' => "#{@response.request}"
+        }).to_json
         raise error
       end
     end
