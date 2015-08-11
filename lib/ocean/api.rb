@@ -217,6 +217,7 @@ class Api
           '>>> OCEAN REQUEST'=> {
             'url' => url,
             'method' => http_method,
+            'params' => args,
             'headers' => headers,
             'metadata'=> x_metadata,
             'reauthentication'=> reauthentication,
@@ -236,7 +237,7 @@ class Api
       request = Typhoeus::Request.new(url,
                                       method: http_method, 
                                       headers: headers,
-                                      params: args, 
+                                      params: args,
                                       body: body, 
                                       ssl_verifypeer: ssl_verifypeer,
                                       ssl_verifyhost: ssl_verifyhost)
@@ -248,6 +249,7 @@ class Api
       reslog = {
         '<<< OCEAN PARALLEL RESPONSE' => {
           'calling_url' => url,
+          'params' => args,
           'status' => resp.status,
           'headers' => resp.headers,
           'metadata'=> x_metadata,
@@ -333,6 +335,7 @@ class Api
         reslog = {
           '<<< OCEAN NORMAL RESPONSE' => {
             'calling_url' => url,
+            'params' => args,
             'status' => resp.status,
             'headers' => resp.headers,
             'metadata'=> x_metadata,
