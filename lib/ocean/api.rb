@@ -221,14 +221,19 @@ class Api
             'headers' => headers,
             'metadata'=> x_metadata,
             'reauthentication'=> reauthentication,
-            'body' => JSON.parse(body),
+            'body' => body,
             'req-id' => req_id
           }
         }
         Rails.logger.info reqlog.to_json
       end
     rescue => error
-      Rails.logger.error ({'>>> OCEAN REQUEST exception' => "#{error}"}).to_json
+      err_msg = {
+          '>>> OCEAN REQUEST exception' => "#{error}",
+          'url' => url,
+          'body' => body
+      }
+      Rails.logger.error (err_msg).to_json
     end
 
     # This is a Proc when run queues the request and schedules retries
@@ -260,7 +265,12 @@ class Api
       }
       Rails.logger.info reslog.to_json
     rescue => error
-      Rails.logger.error ({'<<< OCEAN PARALLEL RESPONSE exception' => "#{error}"}).to_json
+      err_msg = {
+          '<<< OCEAN PARALLEL RESPONSE exception' => "#{error}",
+          'calling_url' => url,
+          'params' => args,
+      }
+      Rails.logger.error (err_msg).to_json
     end
 
         case response.status
