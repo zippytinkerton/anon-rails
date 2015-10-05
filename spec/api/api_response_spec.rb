@@ -73,7 +73,7 @@ describe Api::Response, :type => :request do
       timed_out?:       false,
       success?:         false,
       modified?:        true,
-      request: true
+      request:          Typhoeus::Request.new("url", method: :test, headers: {})
     )
     expect {error_response.body}.to raise_error(JSON::ParserError)
   end

@@ -113,7 +113,7 @@ class Api
       rescue => error
         Rails.logger.error ({
           '>>> OCEAN RESPONSE JSON PARSE EXCEPTION' => "#{@response.response_body}",
-          'request' => "#{@response.request}"
+          'request' => "#{@response.request.url}"
         }).to_json
         raise error
       end
