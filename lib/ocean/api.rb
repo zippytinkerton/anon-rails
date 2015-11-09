@@ -146,6 +146,13 @@ class Api
     def modified?
       @response.modified?
     end
+
+    #
+    # Returns underlying return message.
+    #
+    def return_message
+      @response.return_message
+    end
   end
 
 
@@ -167,6 +174,7 @@ class Api
   # +reauthentication+ (true by default), controls whether 400 and 419 will trigger reauth.
   # +ssl_verifypeer+ (true by default), controls SSL peer verification.
   # +ssl_verifyhost+ (2 by default), controls SSL host verification.
+  # +verbose, if given controls underlying log verbosity (true/false)
   #
   # Automatic retries for GET requests are available:
   #
@@ -186,6 +194,7 @@ class Api
                    x_api_token: headers['X-API-Token'], 
                    reauthentication: true,
                    ssl_verifypeer: true, ssl_verifyhost: 2,
+                   verbose: nil,
                    retries: 0, backoff_time: 1, backoff_rate: 0.9, backoff_max: 30,
                    x_metadata: Thread.current[:metadata],
                    &block)
@@ -245,7 +254,8 @@ class Api
                                       params: args,
                                       body: body, 
                                       ssl_verifypeer: ssl_verifypeer,
-                                      ssl_verifyhost: ssl_verifyhost)
+                                      ssl_verifyhost: ssl_verifyhost,
+                                      verbose: verbose)
       # Define a callback to process the response and do retries
       request.on_complete do |typhoeus_response|
         response = Response.new typhoeus_response
@@ -255,6 +265,7 @@ class Api
         '<<< OCEAN PARALLEL RESPONSE' => {
           'calling_url' => url,
           'params' => args,
+          'return-message' => resp.return_message,
           'status' => resp.status,
           'headers' => resp.headers,
           'metadata'=> x_metadata,
@@ -346,6 +357,7 @@ class Api
           '<<< OCEAN NORMAL RESPONSE' => {
             'calling_url' => url,
             'params' => args,
+            'return-message' => resp.return_message,
             'status' => resp.status,
             'headers' => resp.headers,
             'metadata'=> x_metadata,

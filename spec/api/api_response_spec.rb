@@ -25,6 +25,10 @@ describe Api::Response, :type => :request do
 	  expect(@response).to respond_to :request
 	end
 
+	it "should expose the low level return message" do
+	  expect(@response).to respond_to :return_message
+	end
+
 	it "should have a status reader" do
 	  expect(@response.status).to be_an Integer
 	end
