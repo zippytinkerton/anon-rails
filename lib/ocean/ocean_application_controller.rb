@@ -10,8 +10,8 @@ module OceanApplicationController
   def default_url_options(options = nil)
     { :protocol => "https", :host => OCEAN_API_HOST }
   end
-  
-  
+
+
   #
   # Ensures that there is an +X-API-Token+ HTTP header in the request.
   # Stores the token in @x_api_token for use during authorisation of the
@@ -40,7 +40,7 @@ module OceanApplicationController
     expires_in 0, must_revalidate: true
     false
   end
-  
+
 
 
   #
@@ -65,7 +65,7 @@ module OceanApplicationController
     end
     # Create a query string and call Auth
     qs = Api.authorization_string(@@extra_actions, controller_name, action_name)
-    response = Api.permitted?(@x_api_token, query: qs)                                   
+    response = Api.permitted?(@x_api_token, query: qs)
     if response.status == 200
       a = response.body['authentication']
       @auth_api_user_id = a['user_id']  # Deprecate and remove
@@ -94,8 +94,8 @@ module OceanApplicationController
     obj.created_by = id_or_uri if obj.created_by.blank? || obj.created_by == 0
     obj.updated_by = id_or_uri
   end
-  
-  
+
+
   #
   # Renders an API level error. The body will be a JSON hash with a single key, 
   # +_api_error+. The value is an array containing the +messages+.
@@ -113,14 +113,14 @@ module OceanApplicationController
   def render_api_error(status_code, *messages)
     render json: {_api_error: messages}, status: status_code
   end
-  
+
   #
   # Renders a +HEAD+ response with HTTP status 204 No Content.
   #
   def render_head_204
-    render text: '', status: 204 #, content_type: 'application/json'
+    render nothing: true, status: 204 , content_type: 'application/json'
   end
-  
+
   #
   # Renders a HTTP 422 Unprocessable Entity response with a body enumerating
   # each invalid Rails resource attribute and all their errors. This is usually
@@ -143,7 +143,7 @@ module OceanApplicationController
     except = except.collect(&:to_sym)
     render json: r.errors.messages.except(*except), status: 422
   end
-  
+
   #
   # This is the main rendering function in Ocean. The argument +x+ can be a resource
   # or a collection of resources (which need not be of the same type).
@@ -165,7 +165,7 @@ module OceanApplicationController
       end
       return
     else
-      resources = x.dup.collect { |m| render_to_string(partial: m.to_partial_path, 
+      resources = x.dup.collect { |m| render_to_string(partial: m.to_partial_path,
                                                    locals: {m.class.model_name.i18n_key => m}) }
       count = resources.count
       total_count = x.respond_to?(:unscope) ? x.unscope(:limit, :offset).count : count
@@ -188,13 +188,13 @@ module OceanApplicationController
           links['next_page'] = {href: url_for(params.merge(page: next_page)), type: 'application/json'} if next_page
         end
       end
-      
+
       attrs['_links'] = links if links
       attrs['page'] = page if page
       attrs['page_size'] = page_size if page_size
       attrs['total_pages'] = total_pages if total_pages
 
-      render text: '{"_collection":{"resources":[' + resources.join(',') + ']' + 
+      render text: '{"_collection":{"resources":[' + resources.join(',') + ']' +
         (attrs.collect do |k, v|
            ',"' + k.to_s + '":' + v.to_json
          end).join('') +
@@ -211,7 +211,7 @@ module OceanApplicationController
   #
   def filtered_params(klass)
     result = {}
-    params.each do |k, v| 
+    params.each do |k, v|
       result[k] = v if klass.accessible_attributes.include?(k)
     end
     result
